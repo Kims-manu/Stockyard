@@ -206,7 +206,7 @@ function showToast(msg, tone='green'){
    txns/{autoId}   -> one document per receive / issue / transfer
    ===================================================================== */
 let unsubs = [], unsubTxns = null;
-let dataSubscribed = false, appRendered = false;
+let dataSubscribed = false, appRendered = false, bootstrapTried = false;
 let got = {units:false, stock:false, txns:false};
 let pend = {stock:false, txns:false};
 
@@ -239,7 +239,7 @@ function unsubscribeAll(){
   unsubs.forEach(u => { try{ u(); }catch(e){} });
   unsubs = [];
   if(unsubTxns){ try{ unsubTxns(); }catch(e){} unsubTxns = null; }
-  dataSubscribed = false; appRendered = false;
+  dataSubscribed = false; appRendered = false; bootstrapTried = false;
   got = {units:false, stock:false, txns:false};
   pend = {stock:false, txns:false};
 }
@@ -284,6 +284,21 @@ function renderNotSetup(email){
   document.getElementById('signOutBtn2').addEventListener('click', ()=> signOut(auth));
 }
 
+function renderProblem(err){
+  const denied = ((err && err.code) || '').includes('permission-denied');
+  const who = auth.currentUser && auth.currentUser.email ? auth.currentUser.email : '';
+  document.getElementById('app').innerHTML = `
+    <div class="login"><div class="login-card">
+      <div class="brand-icon">${ICONS.hex}</div>
+      <h1>STOCKYARD</h1>
+      <p>${denied
+        ? 'The server refused access for <b>' + esc(who) + '</b>.<br><br>Either this account has not been added by your admin yet, or the security rules still need your owner email.'
+        : esc(friendlyErr(err))}</p>
+      <button class="btn btn-ghost" id="signOutBtn3">Sign out</button>
+    </div></div>`;
+  document.getElementById('signOutBtn3').addEventListener('click', ()=> signOut(auth));
+}
+
 function startApp(){
   showLoading();
   onAuthStateChanged(auth, user => {
@@ -300,10 +315,13 @@ function watchProfile(user){
   const uref = doc(db, 'users', email);
   showLoading('Signing in…');
   unsubs.push(onSnapshot(uref, async snap => {
+    if(snap.metadata.hasPendingWrites) return;      // only trust what the server has confirmed
     if(!snap.exists()){
-      // first run: only the owner email named in the security rules is allowed to create itself
+      // first run: only the owner email named in the security rules may create its own profile (tried once)
+      if(bootstrapTried){ renderNotSetup(email); return; }
+      bootstrapTried = true;
       try{ await setDoc(uref, {email, name: user.displayName || 'Owner', role:'admin', unitId:''}); }
-      catch(e){ if(!dataSubscribed) renderNotSetup(email); }
+      catch(e){ renderNotSetup(email); }
       return;
     }
     const d = snap.data();
@@ -332,13 +350,13 @@ function subscribeData(){
     }
     STATE.units = snap.data().list || [];
     got.units = true; maybeReady();
-  }, err => showLoading(friendlyErr(err))));
+  }, err => renderProblem(err)));
 
   unsubs.push(onSnapshot(collection(db, 'stock'), snap => {
     rebuildStock(snap);
     pend.stock = snap.metadata.hasPendingWrites;
     got.stock = true; maybeReady(); updateSyncBadge();
-  }, err => showLoading(friendlyErr(err))));
+  }, err => renderProblem(err)));
 
   subscribeTxns();
 }
@@ -350,7 +368,7 @@ function subscribeTxns(){
     STATE.recent = snap.docs.map(parseTxn);
     pend.txns = snap.metadata.hasPendingWrites;
     got.txns = true; maybeReady(); updateSyncBadge();
-  }, err => showLoading(friendlyErr(err)));
+  }, err => renderProblem(err));
 }
 
 function parseTxn(d){
