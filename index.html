@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F5F7">
+<title>Stockyard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root{
+  --bg:#F4F5F7; --surface:#FFFFFF; --surface2:#EEF0F3; --border:#DDE1E6; --borderLight:#C7CDD6;
+  --text:#1B2027; --textDim:#5B6472; --textFaint:#8A93A0;
+  --steel:#3D6C8C; --steelDim:#E3EDF3; --amber:#C2650F; --amberDim:#FBE9D6;
+  --green:#2E8B57; --greenDim:#E3F5EA; --red:#C0392B; --redDim:#FBE4E1;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:920px;margin:0 auto;padding:0 16px 40px;}
+.header{border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:20;}
+.header-inner{padding:18px 0 0;}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.brand-icon{width:34px;height:34px;border-radius:8px;background:var(--steelDim);color:var(--steel);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.brand-title{font-family:'Oswald',sans-serif;font-size:19px;font-weight:600;letter-spacing:.3px;line-height:1.1;}
+.brand-sub{font-size:11px;color:var(--textFaint);letter-spacing:.5px;}
+.whoami{margin-left:auto;text-align:right;font-size:11.5px;color:var(--textDim);}
+.whoami b{color:var(--text);}
+.tabs{display:flex;gap:4px;overflow-x:auto;}
+.tab{display:flex;align-items:center;gap:6px;background:none;border:none;padding:9px 12px;cursor:pointer;white-space:nowrap;color:var(--textFaint);font-size:13px;font-weight:600;border-bottom:2px solid transparent;font-family:inherit;}
+.tab.active{color:var(--text);border-bottom-color:var(--amber);}
+.section-title{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;letter-spacing:.3px;margin-bottom:2px;}
+.section-sub{font-size:12px;color:var(--textFaint);margin-bottom:12px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(16,24,32,.04);}
+.card.tight{padding:12px;}
+.grid{display:grid;gap:10px;}
+.field{display:block;margin-bottom:14px;}
+.field-label{display:block;font-size:12px;font-weight:600;color:var(--textDim);margin-bottom:6px;letter-spacing:.2px;}
+.field-hint{display:block;font-size:11px;color:var(--textFaint);margin-top:4px;}
+input,select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;}
+input:focus,select:focus{border-color:var(--steel);}
+.row{display:flex;gap:10px;}
+.row>*{flex:1;}
+.btn{border:none;border-radius:8px;padding:11px 18px;font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;letter-spacing:.2px;width:100%;}
+.btn-amber{background:var(--amber);color:#221200;}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);}
+.btn-red{background:var(--red);color:#1a0a09;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-row{display:flex;gap:8px;margin-bottom:14px;}
+.pill{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;letter-spacing:.3px;text-transform:uppercase;display:inline-block;}
+.pill-green{background:var(--greenDim);color:var(--green);}
+.pill-amber{background:var(--amberDim);color:var(--amber);}
+.pill-red{background:var(--redDim);color:var(--red);}
+.pill-steel{background:var(--steelDim);color:var(--steel);}
+.shape-tag{display:inline-flex;align-items:center;gap:6px;}
+.shape-icon{width:22px;height:22px;border-radius:5px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--steel);flex-shrink:0;}
+.mono{font-family:'IBM Plex Mono',monospace;}
+.txn-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+.txn-row:last-child{border-bottom:none;}
+.txn-left{display:flex;align-items:center;gap:10px;min-width:0;}
+.txn-title{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;}
+.txn-sub{font-size:11px;color:var(--textFaint);}
+.txn-right{text-align:right;flex-shrink:0;margin-left:8px;}
+.empty{color:var(--textFaint);font-size:13px;}
+.bar-track{height:5px;background:var(--surface2);border-radius:999px;overflow:hidden;}
+.bar-fill{height:100%;background:var(--steel);border-radius:999px;}
+.stat-row{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px;}
+.chiprow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.chip{display:flex;align-items:center;gap:5px;padding:7px 11px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--textDim);font-size:12.5px;cursor:pointer;}
+.chip.active{border-color:var(--steel);background:var(--steelDim);color:var(--text);}
+.unit-chip{background:var(--surface2);border-radius:6px;padding:5px 9px;font-size:11.5px;flex:1 1 100px;}
+.unit-chip .u-name{color:var(--textFaint);margin-bottom:1px;}
+.unit-chip .u-val{color:var(--text);font-family:'IBM Plex Mono',monospace;}
+.stock-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.searchbar{position:relative;flex:1;}
+.searchbar input{padding-left:30px;}
+.searchbar svg{position:absolute;left:10px;top:12px;}
+.filter-row{display:flex;gap:8px;margin-bottom:14px;}
+.filter-row select{width:130px;}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--surface);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:8px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:90vw;font-size:13px;}
+.toast.green{border:1px solid var(--green);}
+.toast.red{border:1px solid var(--red);}
+.center-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:70vh;text-align:center;padding:20px;color:var(--textDim);font-size:14px;line-height:1.6;}
+.spinner{width:26px;height:26px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--steel);animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.userlist-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.userlist-row:last-child{border-bottom:none;}
+.userlist-name{font-size:13px;color:var(--text);}
+.userlist-email{font-size:11px;color:var(--textFaint);}
+.iconbtn{background:none;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--red);}
+.combo{position:relative;}
+.combo-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;box-sizing:border-box;}
+.combo-input:focus{border-color:var(--steel);}
+.combo-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;z-index:60;box-shadow:0 8px 24px rgba(16,24,32,.14);}
+.combo-dropdown.open{display:block;}
+.combo-option{padding:10px 12px;font-size:13px;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);}
+.combo-option:last-child{border-bottom:none;}
+.combo-option:hover,.combo-option:active{background:var(--surface2);}
+.combo-empty{padding:10px 12px;font-size:12.5px;color:var(--textFaint);}
+.txn-row{flex-wrap:wrap;}
+.txn-actions{display:flex;gap:6px;margin-left:10px;flex-shrink:0;}
+.txn-actions .iconbtn{color:var(--textDim);}
+.txn-actions .iconbtn:last-child{color:var(--red);}
+.modal-overlay{position:fixed;inset:0;background:rgba(20,24,30,.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;}
+.modal-card{background:var(--surface);border-radius:14px;padding:20px;width:min(420px,100%);box-shadow:0 12px 32px rgba(16,24,32,.25);}
+.modal-title{font-family:'Oswald',sans-serif;font-size:17px;font-weight:600;margin-bottom:2px;}
+.modal-sub{font-size:12px;color:var(--textFaint);margin-bottom:16px;}
+.modal-actions{display:flex;gap:8px;margin-top:4px;}
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:30px 24px;width:min(390px,100%);text-align:center;box-shadow:0 8px 28px rgba(16,24,32,.08);}
+.login-card .brand-icon{margin:0 auto 14px;width:46px;height:46px;border-radius:10px;}
+.login-card h1{font-family:'Oswald',sans-serif;font-size:24px;font-weight:600;letter-spacing:.4px;margin:0 0 2px;}
+.login-card p{font-size:13px;color:var(--textDim);line-height:1.55;margin:8px 0 18px;}
+.login-card .small{font-size:11.5px;color:var(--textFaint);margin:14px 0 0;}
+.login-err{background:var(--redDim);color:var(--red);border-radius:8px;padding:9px 11px;font-size:12.5px;margin-bottom:14px;text-align:left;}
+.sync{font-size:11px;margin-left:6px;font-weight:600;}
+.sync.ok{color:var(--green);} .sync.pending{color:var(--amber);} .sync.off{color:var(--textFaint);}
+.linkbtn{background:none;border:none;color:var(--steel);font-size:11.5px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline;}
+.loadmore{margin-top:2px;}
+</style>
+</head>
+<body>
+<div id="app"><div class="center-msg"><div class="spinner"></div>Loading Stockyard…</div></div>
+<div id="modalRoot"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager,
+  doc, collection, query, orderBy, limit, onSnapshot, getDocs, setDoc, deleteDoc,
+  writeBatch, increment, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDpkD_7xtnBvLwvVOzDItAkj8D7VqJntqY",
+  authDomain: "kranti-stockyard.firebaseapp.com",
+  projectId: "kranti-stockyard",
+  storageBucket: "kranti-stockyard.firebasestorage.app",
+  messagingSenderId: "653766076471",
+  appId: "1:653766076471:web:11262396940893b77ef7b2"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+let db;
+try {
+  // local cache = instant reopen + entries saved offline sync later
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    experimentalAutoDetectLongPolling: true
+  });
+} catch (e) { db = getFirestore(app); }
+
+/* ---------- tiny icon set (inline SVG) ---------- */
+const ICONS = {
+  round:  '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"><circle cx="12" cy="12" r="9"/></svg>',
+  square: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"><rect x="4" y="4" width="16" height="16" rx="1.5"/></svg>',
+  hex:    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"><path d="M21 8v8l-9 5-9-5V8l9-5 9 5z"/></svg>',
+  flat:   '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="12" x2="20" y2="12"/></svg>',
+  rectangle: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"><rect x="3" y="7" width="18" height="10" rx="1.5"/></svg>',
+  search: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A93A0" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+  arrow: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A93A0" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+  check: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2E8B57" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>',
+  warn: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C0392B" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>',
+  trash: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>',
+  edit: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+};
+const SHAPES = ['Round','Square','Hex','Flat','Rectangle'];
+const shapeIcon = s => ICONS[s.toLowerCase()] || ICONS.round;
+
+/* ---------- state ---------- */
+let STATE = null;
+let TAB = 'dashboard';
+let ENTRY_MODE = 'receive';
+let toastTimer = null;
+let logLimit = 50;
+
+function fmt(n, d=0){
+  const v = Number(n)||0;
+  return v.toLocaleString(undefined, {minimumFractionDigits:d, maximumFractionDigits:d});
+}
+function fmtTime(ts){
+  const dt = new Date(ts);
+  return dt.toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'2-digit'}) + ' · ' +
+         dt.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function unitName(id){ const u=(STATE.units||[]).find(u=>u.id===id); return u?u.name:'—'; }
+function isAdmin(){ return STATE.user.role === 'admin'; }
+
+function showToast(msg, tone='green'){
+  clearTimeout(toastTimer);
+  let el = document.getElementById('toast');
+  if(!el){ el = document.createElement('div'); el.id='toast'; document.body.appendChild(el); }
+  el.className = 'toast ' + tone;
+  el.innerHTML = (tone==='red'?ICONS.warn:ICONS.check) + '<span>' + esc(msg) + '</span>';
+  el.style.display = 'flex';
+  toastTimer = setTimeout(()=>{ el.style.display='none'; }, 2800);
+}
+
+/* =====================================================================
+   DATA LAYER  (Firebase Auth + Firestore)
+   users/{email}   -> {name, role: admin|staff, unitId}
+   config/units    -> {list: [{id,name}]}
+   stock/{unitId}  -> {lastTxn, i_<itemId>: {shape,size,grade,make,p,w}, ...}
+   txns/{autoId}   -> one document per receive / issue / transfer
+   ===================================================================== */
+let unsubs = [], unsubTxns = null;
+let dataSubscribed = false, appRendered = false;
+let got = {units:false, stock:false, txns:false};
+let pend = {stock:false, txns:false};
+
+function b64url(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function itemIdOf(shape, size, grade, make){ return 'i_' + b64url(buildKeyClient(shape, size, grade, make)); }
+function round2(n){ return Math.round((Number(n)||0)*100)/100; }
+
+function friendlyErr(e){
+  const code = (e && e.code) || '';
+  if(code.includes('permission-denied')) return 'The server rejected this change. You may not have permission for that unit.';
+  if(code.includes('unavailable')) return 'No connection right now. The change is saved on this device and will sync when you are online.';
+  return (e && e.message) ? e.message : 'Something went wrong.';
+}
+
+function updateSyncBadge(){
+  const el = document.getElementById('syncBadge');
+  if(!el) return;
+  if(!navigator.onLine){ el.className = 'sync off'; el.textContent = '○ Offline'; }
+  else if(pend.stock || pend.txns){ el.className = 'sync pending'; el.textContent = '↻ Syncing'; }
+  else { el.className = 'sync ok'; el.textContent = '● Synced'; }
+}
+window.addEventListener('online', updateSyncBadge);
+window.addEventListener('offline', updateSyncBadge);
+
+function unsubscribeAll(){
+  unsubs.forEach(u => { try{ u(); }catch(e){} });
+  unsubs = [];
+  if(unsubTxns){ try{ unsubTxns(); }catch(e){} unsubTxns = null; }
+  dataSubscribed = false; appRendered = false;
+  got = {units:false, stock:false, txns:false};
+  pend = {stock:false, txns:false};
+}
+
+function showLoading(msg){
+  document.getElementById('app').innerHTML = '<div class="center-msg"><div class="spinner"></div>'+esc(msg||'Loading Stockyard…')+'</div>';
+}
+
+function renderLogin(errMsg){
+  document.getElementById('app').innerHTML = `
+    <div class="login"><div class="login-card">
+      <div class="brand-icon">${ICONS.hex}</div>
+      <h1>STOCKYARD</h1>
+      <div style="font-size:11px;color:var(--textFaint);letter-spacing:.5px;">BAR &amp; SECTION INVENTORY</div>
+      <p>Sign in with the Google account your admin added for you.</p>
+      ${errMsg ? '<div class="login-err">'+esc(errMsg)+'</div>' : ''}
+      <button class="btn btn-amber" id="loginBtn">Sign in with Google</button>
+      <p class="small">Sign-in does not work inside some in-app browsers (like the one in WhatsApp). If it fails, open this link in Chrome or Safari.</p>
+    </div></div>`;
+  document.getElementById('loginBtn').addEventListener('click', async ()=>{
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true; btn.textContent = 'Opening Google…';
+    try{ await signInWithPopup(auth, new GoogleAuthProvider()); }
+    catch(e){
+      const c = (e && e.code) || '';
+      if(c.includes('popup-closed') || c.includes('cancelled')) renderLogin();
+      else if(c.includes('popup-blocked')) renderLogin('Your browser blocked the sign-in window. Allow pop-ups for this site and try again.');
+      else if(c.includes('unauthorized-domain')) renderLogin('This website address has not been approved in Firebase yet (Authentication → Settings → Authorized domains).');
+      else renderLogin('Sign-in failed: ' + (e.message || c));
+    }
+  });
+}
+
+function renderNotSetup(email){
+  document.getElementById('app').innerHTML = `
+    <div class="login"><div class="login-card">
+      <div class="brand-icon">${ICONS.hex}</div>
+      <h1>STOCKYARD</h1>
+      <p>You are signed in as<br><b>${esc(email)}</b><br><br>This account has not been added yet. Ask your admin to add this exact email in the Admin tab, then reopen this page.</p>
+      <button class="btn btn-ghost" id="signOutBtn2">Sign out</button>
+    </div></div>`;
+  document.getElementById('signOutBtn2').addEventListener('click', ()=> signOut(auth));
+}
+
+function startApp(){
+  showLoading();
+  onAuthStateChanged(auth, user => {
+    unsubscribeAll();
+    STATE = null;
+    if(!user){ renderLogin(); return; }
+    if(!user.email){ renderLogin('This Google account has no email address.'); return; }
+    watchProfile(user);
+  });
+}
+
+function watchProfile(user){
+  const email = user.email.toLowerCase();
+  const uref = doc(db, 'users', email);
+  showLoading('Signing in…');
+  unsubs.push(onSnapshot(uref, async snap => {
+    if(!snap.exists()){
+      // first run: only the owner email named in the security rules is allowed to create itself
+      try{ await setDoc(uref, {email, name: user.displayName || 'Owner', role:'admin', unitId:''}); }
+      catch(e){ if(!dataSubscribed) renderNotSetup(email); }
+      return;
+    }
+    const d = snap.data();
+    if(d.role !== 'admin' && d.role !== 'staff'){ renderNotSetup(email); return; }
+    if(!STATE) STATE = {user:null, units:[], items:{}, stock:{}, recent:[]};
+    STATE.user = {email, name: d.name || user.displayName || email, role: d.role, unitId: d.unitId || ''};
+    if(!dataSubscribed) subscribeData(); else { appRendered ? render() : null; }
+  }, err => { renderLogin('Could not read your profile: ' + friendlyErr(err)); }));
+}
+
+function maybeReady(){
+  if(!(got.units && got.stock && got.txns)) return;
+  if(!appRendered){ appRendered = true; render(); }
+  else onData();
+}
+
+function subscribeData(){
+  dataSubscribed = true;
+  const unitsRef = doc(db, 'config', 'units');
+  unsubs.push(onSnapshot(unitsRef, snap => {
+    if(!snap.exists()){
+      STATE.units = [];
+      if(isAdmin()) setDoc(unitsRef, {list:[{id:'u1',name:'Unit 1'},{id:'u2',name:'Unit 2'}]}).catch(()=>{});
+      else { got.units = true; maybeReady(); }
+      return;
+    }
+    STATE.units = snap.data().list || [];
+    got.units = true; maybeReady();
+  }, err => showLoading(friendlyErr(err))));
+
+  unsubs.push(onSnapshot(collection(db, 'stock'), snap => {
+    rebuildStock(snap);
+    pend.stock = snap.metadata.hasPendingWrites;
+    got.stock = true; maybeReady(); updateSyncBadge();
+  }, err => showLoading(friendlyErr(err))));
+
+  subscribeTxns();
+}
+
+function subscribeTxns(){
+  if(unsubTxns){ try{ unsubTxns(); }catch(e){} }
+  const q = query(collection(db, 'txns'), orderBy('ts', 'desc'), limit(logLimit));
+  unsubTxns = onSnapshot(q, snap => {
+    STATE.recent = snap.docs.map(parseTxn);
+    pend.txns = snap.metadata.hasPendingWrites;
+    got.txns = true; maybeReady(); updateSyncBadge();
+  }, err => showLoading(friendlyErr(err)));
+}
+
+function parseTxn(d){
+  const x = d.data({serverTimestamps:'estimate'});
+  return {
+    id: d.id,
+    ts: (x.ts && x.ts.toMillis) ? x.ts.toMillis() : Date.now(),
+    type: x.type, itemKey: x.itemId, item: x.item || null,
+    fromUnit: x.fromUnit || '', toUnit: x.toUnit || '',
+    pieces: Number(x.pieces)||0, weight: Number(x.weight)||0,
+    note: x.note || '', user: x.user || ''
+  };
+}
+
+function rebuildStock(snap){
+  const stock = {}, items = {};
+  snap.docs.forEach(d => {
+    const unitId = d.id, data = d.data();
+    stock[unitId] = {};
+    Object.keys(data).forEach(k => {
+      const v = data[k];
+      if(!k.startsWith('i_') || !v || typeof v !== 'object') return;
+      stock[unitId][k] = {pieces: Number(v.p)||0, weight: round2(v.w)};
+      if(!items[k]) items[k] = {shape: v.shape, size: v.size, grade: v.grade, make: v.make || ''};
+    });
+  });
+  STATE.stock = stock; STATE.items = items;
+}
+
+// called whenever Firestore pushes new data (ours or another device's)
+function onData(){
+  if(!STATE || !STATE.user || !appRendered) return;
+  if(TAB === 'dashboard' || TAB === 'history') renderTab();
+  else if(TAB === 'stock'){
+    const el = document.getElementById('stockList');
+    if(el) el.innerHTML = stockCards();
+  }
+  // forms (Transfer / Receive / Issue) and Admin are never redrawn under the user's fingers
+}
+
+/* ---------- writes ---------- */
+function itemFieldValue(item, dp, dw){
+  return {shape:item.shape, size:item.size, grade:item.grade, make:item.make||'',
+          p: increment((dp||0)+0), w: increment(round2(dw)+0)};
+}
+
+// Saves a receive / issue / transfer as ONE atomic batch. Stock numbers are
+// changed with increment(), so two phones saving at once never overwrite each other.
+function commitTxn(t){
+  const pieces = Number(t.pieces)||0, weight = round2(t.weight);
+  const txnRef = doc(collection(db, 'txns'));
+  const txnId = txnRef.id;
+  const batch = writeBatch(db);
+  const touch = (unitId, sign) => batch.set(doc(db, 'stock', unitId),
+    { lastTxn: txnId, [t.itemId]: itemFieldValue(t.item, sign*pieces, sign*weight) }, {merge:true});
+  if(t.type === 'receive') touch(t.toUnit, 1);
+  else if(t.type === 'issue') touch(t.fromUnit, -1);
+  else { touch(t.fromUnit, -1); touch(t.toUnit, 1); }
+  batch.set(txnRef, {
+    ts: serverTimestamp(), type: t.type, itemId: t.itemId,
+    item: {shape:t.item.shape, size:t.item.size, grade:t.item.grade, make:t.item.make||''},
+    fromUnit: t.fromUnit || '', toUnit: t.toUnit || '', pieces, weight, note: t.note || '',
+    user: STATE.user.email, userName: STATE.user.name
+  });
+  return batch.commit();
+}
+
+function afterCommit(promise, okMsg){
+  showToast(navigator.onLine ? okMsg : okMsg + ' on this device. It will sync when you are online.');
+  promise.catch(e => showToast(friendlyErr(e), 'red'));
+}
+
+function stockOf(unitId, key){ return (STATE.stock[unitId] || {})[key] || {pieces:0, weight:0}; }
+
+function unitDeltasFor(t, np, nw, mode){
+  // mode 'edit' -> change from old to new values; mode 'delete' -> reverse the whole entry
+  const op = t.pieces||0, ow = t.weight||0, out = {};
+  if(mode === 'delete'){ np = 0; nw = 0; }
+  if(t.type === 'receive') out[t.toUnit] = [np-op, round2(nw-ow)];
+  else if(t.type === 'issue') out[t.fromUnit] = [op-np, round2(ow-nw)];
+  else { out[t.fromUnit] = [op-np, round2(ow-nw)]; out[t.toUnit] = [np-op, round2(nw-ow)]; }
+  return out;
+}
+
+function checkNotNegative(t, deltas){
+  Object.keys(deltas).forEach(unitId => {
+    const cur = stockOf(unitId, t.itemKey), d = deltas[unitId];
+    if(cur.pieces + d[0] < -0.001 || cur.weight + d[1] < -0.005){
+      const it = t.item || STATE.items[t.itemKey];
+      throw new Error("Can't apply that correction. It would take " + itemLabel(it) + ' below zero in ' + unitName(unitId) + '. Stock has likely moved since this entry was made.');
+    }
+  });
+}
+
+async function editTxn(t, newPieces, newWeight, newNote){
+  const np = Number(newPieces)||0, nw = round2(newWeight);
+  const deltas = unitDeltasFor(t, np, nw, 'edit');
+  checkNotNegative(t, deltas);
+  const batch = writeBatch(db);
+  Object.keys(deltas).forEach(unitId => {
+    const d = deltas[unitId];
+    if(d[0] || d[1]) batch.set(doc(db, 'stock', unitId),
+      { lastTxn: t.id, [t.itemKey]: {p: increment(d[0]+0), w: increment(d[1]+0)} }, {merge:true});
+  });
+  let note = String(newNote || '').replace(/\s*\[edited by [^\]]*\]\s*$/, '').trim();
+  note = (note ? note + ' ' : '') + '[edited by ' + (STATE.user.name || STATE.user.email) + ']';
+  batch.update(doc(db, 'txns', t.id), {pieces: np, weight: nw, note});
+  await batch.commit();
+}
+
+async function deleteTxn(t){
+  const deltas = unitDeltasFor(t, 0, 0, 'delete');
+  checkNotNegative(t, deltas);
+  const batch = writeBatch(db);
+  Object.keys(deltas).forEach(unitId => {
+    const d = deltas[unitId];
+    if(d[0] || d[1]) batch.set(doc(db, 'stock', unitId),
+      { lastTxn: t.id, [t.itemKey]: {p: increment(d[0]+0), w: increment(d[1]+0)} }, {merge:true});
+  });
+  batch.delete(doc(db, 'txns', t.id));
+  await batch.commit();
+}
+
+async function renameUnitFb(id, name){
+  const list = (STATE.units || []).map(u => u.id === id ? {id: u.id, name} : u);
+  await setDoc(doc(db, 'config', 'units'), {list});
+}
+async function saveUserFb(email, name, role, unitId){
+  email = String(email||'').trim().toLowerCase();
+  if(!email || email.indexOf('@') === -1) throw new Error('Enter a valid email address.');
+  if(role === 'staff' && !unitId) throw new Error('Staff must be assigned a unit.');
+  await setDoc(doc(db, 'users', email), {email, name: name || '', role, unitId: role === 'admin' ? '' : unitId});
+}
+async function removeUserFb(email){
+  email = String(email||'').toLowerCase();
+  if(email === STATE.user.email) throw new Error('You cannot remove your own account.');
+  await deleteDoc(doc(db, 'users', email));
+}
+async function listUsersFb(){
+  const snap = await getDocs(collection(db, 'users'));
+  return snap.docs.map(d => Object.assign({email: d.id}, d.data()));
+}
+
+/* ---------- render root ---------- */
+function render(){
+  const NAV = [
+    ['dashboard','Dashboard'], ['stock','Stock'], ['transfer','Transfer'],
+    ['entry','Receive / Issue'], ['history','Log']
+  ];
+  if(isAdmin()) NAV.push(['admin','Admin']);
+
+  const tabsHtml = NAV.map(([id,label]) =>
+    `<button class="tab ${TAB===id?'active':''}" data-tab="${id}">${esc(label)}</button>`
+  ).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="header"><div class="wrap"><div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">${ICONS.hex}</div>
+        <div>
+          <div class="brand-title">STOCKYARD</div>
+          <div class="brand-sub">BAR &amp; SECTION INVENTORY</div>
+        </div>
+        <div class="whoami"><b>${esc(STATE.user.name||STATE.user.email)}</b><span id="syncBadge" class="sync"></span><br>${STATE.user.role==='admin'?'Admin · all units':'Staff · '+esc(unitName(STATE.user.unitId))} · <button class="linkbtn" id="signOutBtn">Sign out</button></div>
+      </div>
+      <div class="tabs">${tabsHtml}</div>
+    </div></div></div>
+    <div class="wrap" id="tabContent" style="padding-top:20px;"></div>
+  `;
+  document.querySelectorAll('.tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ TAB = btn.dataset.tab; render(); });
+  });
+  document.getElementById('signOutBtn').addEventListener('click', ()=> signOut(auth));
+  updateSyncBadge();
+  renderTab();
+}
+
+function renderTab(){
+  const el = document.getElementById('tabContent');
+  if(TAB==='dashboard') el.innerHTML = viewDashboard();
+  else if(TAB==='stock') el.innerHTML = viewStock();
+  else if(TAB==='transfer') el.innerHTML = viewTransfer();
+  else if(TAB==='entry') el.innerHTML = viewEntry();
+  else if(TAB==='history') el.innerHTML = viewHistory();
+  else if(TAB==='admin') el.innerHTML = viewAdmin();
+  wireTab();
+}
+
+/* ---------- computed helpers ---------- */
+function totals(){
+  const byUnit = {}; let grandPieces=0, grandWeight=0;
+  (STATE.units||[]).forEach(u=> byUnit[u.id] = {pieces:0, weight:0});
+  Object.entries(STATE.stock||{}).forEach(([unitId, items])=>{
+    Object.values(items).forEach(s=>{
+      if(!byUnit[unitId]) byUnit[unitId] = {pieces:0, weight:0};
+      byUnit[unitId].pieces += s.pieces||0; byUnit[unitId].weight += s.weight||0;
+      grandPieces += s.pieces||0; grandWeight += s.weight||0;
+    });
+  });
+  return {byUnit, grandPieces, grandWeight};
+}
+function shapeBreakdown(){
+  const map={}; SHAPES.forEach(s=>map[s]={pieces:0,weight:0});
+  Object.values(STATE.stock||{}).forEach(items=>{
+    Object.entries(items).forEach(([key,s])=>{
+      const it = STATE.items[key]; if(!it) return;
+      if(!map[it.shape]) map[it.shape]={pieces:0,weight:0};
+      map[it.shape].pieces += s.pieces||0; map[it.shape].weight += s.weight||0;
+    });
+  });
+  return map;
+}
+function cloneState(){ return JSON.parse(JSON.stringify(STATE)); }
+
+function getLastUnit(kind, candidateUnits){
+  try{
+    const v = localStorage.getItem('stockyard_last_'+kind+'_unit');
+    if(v && candidateUnits.some(u=>u.id===v)) return v;
+  }catch(e){ /* localStorage unavailable, ignore */ }
+  return candidateUnits[0]?.id;
+}
+function setLastUnit(kind, unitId){
+  try{ localStorage.setItem('stockyard_last_'+kind+'_unit', unitId); }catch(e){ /* ignore */ }
+}
+
+function buildKeyClient(shape, size, grade, make){
+  const base = (shape + '__' + size).toLowerCase().replace(/\s+/g,' ').trim() + '__' + String(grade).trim().toLowerCase();
+  const m = String(make||'').trim().toLowerCase();
+  return m ? (base + '__' + m) : base;
+}
+function itemLabel(it){
+  if(!it) return 'Unknown item';
+  return it.shape+' '+it.size+' · '+it.grade + (it.make ? ' · '+it.make : '');
+}
+
+// Cross-sectional area (mm²) for standard steel density (~7850 kg/m³).
+function areaMm2ForShape(shape, a, b){
+  a = Number(a)||0; b = Number(b)||0;
+  if(shape==='Round') return 0.7854*a*a;
+  if(shape==='Square') return a*a;
+  if(shape==='Hex') return 0.8660*a*a; // a = width across flats
+  if(shape==='Flat' || shape==='Rectangle') return a*b;
+  return 0;
+}
+function kgPerMeter(shape, a, b){
+  return Math.round(areaMm2ForShape(shape,a,b) * 0.00785 * 1000) / 1000;
+}
+function calcWeightKg(shape, a, b, lengthM, pieces){
+  return Math.round(kgPerMeter(shape,a,b) * (Number(lengthM)||0) * (Number(pieces)||0) * 100) / 100;
+}
+function parseSizeNums(sizeStr){
+  return ((sizeStr||'').match(/[\d.]+/g)||[]).map(Number);
+}
+function ensureLocalItem(shape, size, grade, make){
+  const key = itemIdOf(shape, size, grade, make);
+  if(!STATE.items[key]) STATE.items[key] = {shape, size, grade, make: make||''};
+  return key;
+}
+
+/* Turns a native <select> into a type-to-search box, without touching any
+   existing code that reads its .value or listens for 'change' — the select
+   stays the real source of truth, just hidden, and gets its value set (with
+   a dispatched change event) whenever a search result is tapped. */
+function enhanceSelectWithSearch(selectId, placeholder){
+  const select = document.getElementById(selectId);
+  if(!select || select.dataset.enhanced) return;
+  select.dataset.enhanced = '1';
+  select.style.display = 'none';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'combo';
+  wrap.innerHTML = `<input type="text" class="combo-input" autocomplete="off" placeholder="${esc(placeholder||'Search…')}"/><div class="combo-dropdown"></div>`;
+  select.insertAdjacentElement('afterend', wrap);
+  const input = wrap.querySelector('.combo-input');
+  const dropdown = wrap.querySelector('.combo-dropdown');
+
+  function optionsList(){ return Array.from(select.options).filter(o=>o.value); }
+
+  function renderList(query){
+    const q = (query||'').trim().toLowerCase();
+    const opts = optionsList();
+    const filtered = q ? opts.filter(o=>o.textContent.toLowerCase().includes(q)) : opts;
+    dropdown.innerHTML = filtered.length
+      ? filtered.map(o=>`<div class="combo-option" data-value="${esc(o.value)}">${esc(o.textContent)}</div>`).join('')
+      : `<div class="combo-empty">No matching stock</div>`;
+    dropdown.classList.add('open');
+    dropdown.querySelectorAll('.combo-option').forEach(row=>{
+      row.addEventListener('mousedown', e=>{
+        e.preventDefault();
+        select.value = row.dataset.value;
+        input.value = row.textContent;
+        dropdown.classList.remove('open');
+        select.dispatchEvent(new Event('change', {bubbles:true}));
+      });
+    });
+  }
+  input.addEventListener('focus', ()=> renderList(input.value));
+  input.addEventListener('input', ()=> renderList(input.value));
+  input.addEventListener('blur', ()=> setTimeout(()=> dropdown.classList.remove('open'), 150));
+  input.addEventListener('keydown', e=>{ if(e.key==='Escape') dropdown.classList.remove('open'); });
+
+  // callable after the underlying <select>'s options are rebuilt elsewhere,
+  // so the visible search box reflects the (usually reset) selection
+  select._syncSearchLabel = function(){
+    const opt = Array.from(select.options).find(o=>o.value===select.value);
+    input.value = (select.value && opt) ? opt.textContent : '';
+  };
+}
+function optimisticStockDelta(unitId, key, dPieces, dWeight){
+  if(!STATE.stock[unitId]) STATE.stock[unitId] = {};
+  const cur = STATE.stock[unitId][key] || {pieces:0, weight:0};
+  STATE.stock[unitId][key] = {
+    pieces: Math.max(0, cur.pieces + dPieces),
+    weight: Math.max(0, Math.round((cur.weight + dWeight)*100)/100)
+  };
+}
+function optimisticTxn(t){
+  STATE.recent = [Object.assign({id:'temp-'+Date.now(), ts: Date.now()}, t), ...(STATE.recent||[])].slice(0, logLimit);
+}
+
+function availableItems(unitId){
+  const u = (STATE.stock||{})[unitId] || {};
+  return Object.entries(u)
+    .filter(([,s]) => (s.pieces||0)>0 || (s.weight||0)>0)
+    .map(([key,s]) => ({key, s, it: STATE.items[key]}))
+    .filter(r=>r.it)
+    .sort((a,b)=> (a.it.shape+a.it.size).localeCompare(b.it.shape+b.it.size));
+}
+
+/* ---------- Dashboard ---------- */
+function viewDashboard(){
+  const t = totals(); const sb = shapeBreakdown();
+  const unitCards = (STATE.units||[]).map(u=>{
+    const d = t.byUnit[u.id] || {pieces:0,weight:0};
+    return `<div class="card">
+      <div style="font-size:12px;color:var(--textDim);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;">${esc(u.name)}</div>
+      <div style="font-family:'Oswald',sans-serif;font-size:24px;font-weight:600;">${fmt(d.weight,1)} <span style="font-size:13px;color:var(--textFaint);font-weight:400;">kg</span></div>
+      <div style="font-family:'Oswald',sans-serif;font-size:24px;font-weight:600;margin-top:4px;">${fmt(d.pieces)} <span style="font-size:13px;color:var(--textFaint);font-weight:400;">pcs</span></div>
+    </div>`;
+  }).join('');
+
+  const shapeRows = SHAPES.map(sh=>{
+    const d = sb[sh]||{pieces:0,weight:0};
+    const pct = t.grandWeight ? (d.weight/t.grandWeight*100) : 0;
+    return `<div>
+      <div class="stat-row">
+        <span style="display:flex;align-items:center;gap:6px;color:var(--text);"><span style="color:var(--steel);display:flex;">${shapeIcon(sh)}</span> ${sh}</span>
+        <span class="mono" style="color:var(--textDim);">${fmt(d.weight,1)} kg · <b style="color:var(--text);">${fmt(d.pieces)} pcs</b></span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;"></div></div>
+    </div>`;
+  }).join('<div style="height:8px;"></div>');
+
+  const recent = (STATE.recent||[]).slice(0,6);
+  const recentHtml = recent.length ? recent.map(t=>txnRow(t,false)).join('') : '<div class="empty">No transactions yet — receive some stock to get started.</div>';
+
+  return `
+    <div class="section-title">Overview</div>
+    <div class="section-sub">Real-time position across ${(STATE.units||[]).length===2?'both stores':'your stores'}</div>
+    <div class="grid" style="grid-template-columns:repeat(${(STATE.units||[]).length},1fr);margin-bottom:14px;">${unitCards}</div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+        <span style="font-size:12px;color:var(--textDim);font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Combined Stock</span>
+        <span style="font-family:'Oswald',sans-serif;font-size:20px;color:var(--amber);font-weight:600;">${fmt(t.grandWeight,1)} kg</span>
+      </div>
+      ${shapeRows}
+    </div>
+    <div class="section-title">Recent activity</div>
+    <div class="card" style="margin-top:8px;">${recentHtml}</div>
+  `;
+}
+
+function txnRow(t, editable){
+  const it = t.item || STATE.items[t.itemKey];
+  const toneMap = {receive:'green', issue:'red', transfer:'amber'};
+  const labelMap = {receive:'RECEIVED', issue:'ISSUED', transfer:'TRANSFER'};
+  const where = t.type==='transfer' ? (unitName(t.fromUnit)+' → '+unitName(t.toUnit)) :
+                t.type==='receive' ? unitName(t.toUnit) : unitName(t.fromUnit);
+  const actions = editable ? `<div class="txn-actions">
+      <button class="iconbtn" data-edit-txn="${t.id}" title="Edit">${ICONS.edit}</button>
+      <button class="iconbtn" data-del-txn="${t.id}" title="Delete">${ICONS.trash}</button>
+    </div>` : '';
+  return `<div class="txn-row">
+    <div class="txn-left">
+      <span class="pill pill-${toneMap[t.type]}">${labelMap[t.type]}</span>
+      <div>
+        <div class="txn-title">${esc(itemLabel(it))}</div>
+        <div class="txn-sub">${esc(where)} · ${fmtTime(t.ts)}${t.user?' · '+esc(t.user.split('@')[0]):''}${t.note?' · '+esc(t.note):''}</div>
+      </div>
+    </div>
+    <div class="txn-right">
+      <div class="mono" style="font-size:12.5px;color:var(--text);">${fmt(t.weight,1)} kg</div>
+      <div class="mono" style="font-size:12.5px;color:var(--text);">${fmt(t.pieces)} pcs</div>
+    </div>
+    ${actions}
+  </div>`;
+}
+
+/* ---------- Stock ---------- */
+let stockQuery = '', stockShapeFilter = 'All', stockMakeFilter = 'All';
+function stockCards(){
+  const rows = Object.entries(STATE.items||{}).map(([key,it])=>{
+    const perUnit = {};
+    (STATE.units||[]).forEach(u => perUnit[u.id] = (STATE.stock[u.id]||{})[key] || {pieces:0,weight:0});
+    const totalWeight = Object.values(perUnit).reduce((a,s)=>a+s.weight,0);
+    const totalPieces = Object.values(perUnit).reduce((a,s)=>a+s.pieces,0);
+    return {key, it, perUnit, totalWeight, totalPieces};
+  })
+  .filter(r => stockShapeFilter==='All' || r.it.shape===stockShapeFilter)
+  .filter(r => stockMakeFilter==='All' || (r.it.make||'—')===stockMakeFilter)
+  .filter(r => { if(!stockQuery.trim()) return true; const hay=(r.it.shape+' '+r.it.size+' '+r.it.grade+' '+(r.it.make||'')).toLowerCase(); return hay.includes(stockQuery.toLowerCase()); })
+  .filter(r => r.totalWeight>0.001 || r.totalPieces>0)
+  .sort((a,b)=>b.totalWeight-a.totalWeight);
+
+  const cards = rows.length ? rows.map(r=>`
+    <div class="card tight">
+      <div class="stock-card-top">
+        <span class="shape-tag"><span class="shape-icon">${shapeIcon(r.it.shape)}</span><span class="mono" style="font-size:12.5px;">${esc(r.it.size)}</span></span>
+        <div style="text-align:right;">
+          <div class="mono" style="font-size:13.5px;font-weight:500;">${fmt(r.totalWeight,1)} kg</div>
+          <div class="mono" style="font-size:13.5px;font-weight:500;">${fmt(r.totalPieces)} pcs</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--textDim);margin-bottom:8px;">Grade: <span style="color:var(--text);font-weight:500;">${esc(r.it.grade)}</span>${r.it.make?` · Make: <span style="color:var(--text);font-weight:500;">${esc(r.it.make)}</span>`:''}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${(STATE.units||[]).map(u=>`<div class="unit-chip"><div class="u-name">${esc(u.name)}</div><div class="u-val">${fmt(r.perUnit[u.id].weight,1)} kg</div><div class="u-val">${fmt(r.perUnit[u.id].pieces)} pcs</div></div>`).join('')}
+      </div>
+    </div>
+  `).join('') : '<div class="card"><div class="empty">Nothing in stock yet. Use Receive / Issue to add material.</div></div>';
+  return cards;
+}
+
+function viewStock(){
+  const shapeOpts = SHAPES.map(s=>`<option ${stockShapeFilter===s?'selected':''}>${s}</option>`).join('');
+  const makes = Array.from(new Set(Object.values(STATE.items||{}).map(i=>i.make).filter(Boolean)));
+  const makeOpts = makes.map(m=>`<option ${stockMakeFilter===m?'selected':''}>${esc(m)}</option>`).join('');
+  return `
+    <div class="section-title">Stock Position</div>
+    <div class="section-sub">Every grade, size, make and shape currently held</div>
+    <div class="filter-row">
+      <div class="searchbar">${ICONS.search}<input id="stockSearch" placeholder="Search size, grade or make…" value="${esc(stockQuery)}"/></div>
+      <select id="stockShapeFilter"><option ${stockShapeFilter==='All'?'selected':''}>All</option>${shapeOpts}</select>
+      ${makes.length ? `<select id="stockMakeFilter"><option ${stockMakeFilter==='All'?'selected':''}>All</option>${makeOpts}</select>` : ''}
+    </div>
+    <div id="stockList">${stockCards()}</div>
+  `;
+}
+
+/* ---------- Transfer ---------- */
+function viewTransfer(){
+  const units = STATE.units||[];
+  const canFrom = isAdmin() ? units : units.filter(u=>u.id===STATE.user.unitId);
+  const defaultFrom = getLastUnit('transfer_from', canFrom);
+  return `
+    <div class="section-title">Transfer Stock</div>
+    <div class="section-sub">Move stock between your stores</div>
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end;">
+        <div class="field"><span class="field-label">From</span>
+          <select id="tFrom">${canFrom.map(u=>`<option value="${u.id}" ${u.id===defaultFrom?'selected':''}>${esc(u.name)}</option>`).join('')}</select>
+        </div>
+        <div style="margin-bottom:22px;">${ICONS.arrow}</div>
+        <div class="field"><span class="field-label">To</span><select id="tTo"></select></div>
+      </div>
+      <div class="field"><span class="field-label">Item</span><select id="tItem"><option value="">Select item…</option></select></div>
+      <div id="tQtyWrap"></div>
+      <div class="field"><span class="field-label">Note (optional)</span><input id="tNote" placeholder="e.g. against order #114"/></div>
+      <button class="btn btn-amber" id="tSubmit">Transfer stock</button>
+    </div>
+  `;
+}
+
+/* ---------- Entry (Receive/Issue) ---------- */
+function viewEntry(){
+  return `
+    <div class="section-title">Stock Entry</div>
+    <div class="section-sub">Add new material in, or record stock going out</div>
+    <div class="btn-row">
+      <button class="btn ${ENTRY_MODE==='receive'?'btn-amber':'btn-ghost'}" id="modeReceive">Receive</button>
+      <button class="btn ${ENTRY_MODE==='issue'?'btn-amber':'btn-ghost'}" id="modeIssue">Issue</button>
+    </div>
+    <div id="entryForm"></div>
+  `;
+}
+
+function receiveFormHtml(){
+  const units = STATE.units||[];
+  const canUnits = isAdmin() ? units : units.filter(u=>u.id===STATE.user.unitId);
+  const gradeSuggestions = Array.from(new Set(['EN8','EN8D','EN9','EN19','EN24','EN31','EN36','C45','SAE1018','SAE1045','IS2062','SS304','SS316','MS','TMT Fe500', ...Object.values(STATE.items||{}).map(i=>i.grade)]));
+  const makeSuggestions = Array.from(new Set(Object.values(STATE.items||{}).map(i=>i.make).filter(Boolean)));
+  const lastUnit = getLastUnit('receive', canUnits);
+  return `
+    <div class="card">
+      <div class="field"><span class="field-label">Receiving unit</span>
+        <select id="rUnit">${canUnits.map(u=>`<option value="${u.id}" ${u.id===lastUnit?'selected':''}>${esc(u.name)}</option>`).join('')}</select>
+      </div>
+      <div class="field"><span class="field-label">Shape</span>
+        <div class="chiprow" id="rShapeChips">
+          ${SHAPES.map((s,i)=>`<button type="button" class="chip ${i===0?'active':''}" data-shape="${s}">${shapeIcon(s)} ${s}</button>`).join('')}
+        </div>
+      </div>
+      <div id="rSizeFields"></div>
+      <div class="row">
+        <div class="field"><span class="field-label">Grade</span>
+          <input id="rGrade" list="gradeList" placeholder="e.g. EN8D"/>
+          <datalist id="gradeList">${gradeSuggestions.map(g=>`<option value="${esc(g)}">`).join('')}</datalist>
+        </div>
+        <div class="field"><span class="field-label">Mill / make (optional)</span>
+          <input id="rMake" list="makeList" placeholder="e.g. SAIL, Tata, JSW"/>
+          <datalist id="makeList">${makeSuggestions.map(m=>`<option value="${esc(m)}">`).join('')}</datalist>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><span class="field-label">Pieces</span><input id="rPieces" type="number" min="0" placeholder="0"/></div>
+      </div>
+      <div class="field"><span class="field-label">Weight entry</span>
+        <div class="chiprow" id="rWModeChips">
+          <button type="button" class="chip active" data-wmode="manual">Manual weight</button>
+          <button type="button" class="chip" data-wmode="auto">Auto (by length)</button>
+        </div>
+      </div>
+      <div id="rWeightBlock"></div>
+      <div class="field"><span class="field-label">Note (optional)</span><input id="rNote" placeholder="e.g. supplier / invoice no."/></div>
+      <button class="btn btn-amber" id="rSubmit">Add to stock</button>
+    </div>
+  `;
+}
+function issueFormHtml(){
+  const units = STATE.units||[];
+  const canUnits = isAdmin() ? units : units.filter(u=>u.id===STATE.user.unitId);
+  const lastUnit = getLastUnit('issue', canUnits);
+  return `
+    <div class="card">
+      <div class="field"><span class="field-label">Issuing unit</span>
+        <select id="iUnit">${canUnits.map(u=>`<option value="${u.id}" ${u.id===lastUnit?'selected':''}>${esc(u.name)}</option>`).join('')}</select>
+      </div>
+      <div class="field"><span class="field-label">Item</span><select id="iItem"><option value="">Select item…</option></select></div>
+      <div id="iQtyWrap"></div>
+      <div id="iWeightBlock"></div>
+      <div class="field"><span class="field-label">Note (optional)</span><input id="iNote" placeholder="e.g. sold to customer / order no."/></div>
+      <button class="btn btn-amber" id="iSubmit" disabled>Issue from stock</button>
+    </div>
+  `;
+}
+
+/* ---------- History ---------- */
+let historyFilter = 'All';
+function viewHistory(){
+  const rows = (STATE.recent||[]);
+  const filtered = rows.filter(t => historyFilter==='All' || t.type===historyFilter);
+  return `
+    <div class="section-title">Transaction Log</div>
+    <div class="section-sub">Most recent ${rows.length} transactions</div>
+    <div class="chiprow">
+      ${['All','receive','issue','transfer'].map(f=>`<button class="chip ${historyFilter===f?'active':''}" data-hf="${f}" style="text-transform:capitalize;">${f}</button>`).join('')}
+    </div>
+    <div class="card">${filtered.length ? filtered.map(t=>txnRow(t, isAdmin())).join('') : '<div class="empty">No transactions recorded.</div>'}</div>
+    ${rows.length >= logLimit ? '<button class="btn btn-ghost loadmore" id="logMore">Load older entries</button>' : ''}
+  `;
+}
+
+/* ---------- Admin ---------- */
+function viewAdmin(){
+  return `
+    <div class="section-title">Admin</div>
+    <div class="section-sub">Manage staff logins and unit names</div>
+
+    <div class="card">
+      <div style="font-size:12px;color:var(--textDim);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px;">Units</div>
+      ${(STATE.units||[]).map(u=>`
+        <div class="field"><span class="field-label">${esc(u.id)}</span>
+          <input data-unit-rename="${u.id}" value="${esc(u.name)}"/>
+        </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div style="font-size:12px;color:var(--textDim);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px;">Add / update staff</div>
+      <div class="field"><span class="field-label">Google email</span><input id="uEmail" placeholder="name@gmail.com"/></div>
+      <div class="field"><span class="field-label">Display name</span><input id="uName" placeholder="e.g. Ramesh"/></div>
+      <div class="row">
+        <div class="field"><span class="field-label">Role</span>
+          <select id="uRole"><option value="staff">Staff</option><option value="admin">Admin</option></select>
+        </div>
+        <div class="field" id="uUnitWrap"><span class="field-label">Unit</span>
+          <select id="uUnit">${(STATE.units||[]).map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('')}</select>
+        </div>
+      </div>
+      <button class="btn btn-amber" id="uSubmit">Save user</button>
+    </div>
+
+    <div class="card" id="userListCard"><div class="empty">Loading users…</div></div>
+  `;
+}
+
+/* ---------- wiring ---------- */
+function wireTab(){
+  if(TAB==='stock') wireStock();
+  else if(TAB==='transfer') wireTransfer();
+  else if(TAB==='entry') wireEntry();
+  else if(TAB==='history') wireHistory();
+  else if(TAB==='admin') wireAdmin();
+}
+
+function wireStock(){
+  const refreshList = ()=>{ document.getElementById('stockList').innerHTML = stockCards(); };
+  document.getElementById('stockSearch').addEventListener('input', e=>{ stockQuery=e.target.value; refreshList(); });
+  document.getElementById('stockShapeFilter').addEventListener('change', e=>{ stockShapeFilter=e.target.value; refreshList(); });
+  document.getElementById('stockMakeFilter')?.addEventListener('change', e=>{ stockMakeFilter=e.target.value; refreshList(); });
+}
+
+function wireTransfer(){
+  const units = STATE.units||[];
+  const fromSel = document.getElementById('tFrom');
+  const toSel = document.getElementById('tTo');
+  const itemSel = document.getElementById('tItem');
+  const qtyWrap = document.getElementById('tQtyWrap');
+
+  function refreshToOptions(){
+    toSel.innerHTML = units.filter(u=>u.id!==fromSel.value).map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('');
+  }
+  function refreshItems(){
+    const avail = availableItems(fromSel.value);
+    itemSel.innerHTML = '<option value="">Select item in '+esc(unitName(fromSel.value))+'…</option>' +
+      avail.map(a=>`<option value="${a.key}">${esc(itemLabel(a.it))} — ${fmt(a.s.weight,1)} kg / ${fmt(a.s.pieces)} pc avail.</option>`).join('');
+    qtyWrap.innerHTML = '';
+    itemSel._syncSearchLabel && itemSel._syncSearchLabel();
+  }
+  function refreshQtyFields(){
+    const key = itemSel.value;
+    if(!key){ qtyWrap.innerHTML=''; return; }
+    const avail = availableItems(fromSel.value);
+    const sel = avail.find(a=>a.key===key);
+    if(!sel){ qtyWrap.innerHTML=''; return; }
+    qtyWrap.innerHTML = `<div class="row">
+      <div class="field"><span class="field-label">Pieces (max ${fmt(sel.s.pieces)})</span><input id="tPieces" type="number" min="0" max="${sel.s.pieces}" placeholder="0"/></div>
+      <div class="field"><span class="field-label">Weight kg (max ${fmt(sel.s.weight,1)})</span><input id="tWeight" type="number" min="0" step="0.1" max="${sel.s.weight}" placeholder="0.0"/></div>
+    </div>`;
+  }
+
+  refreshToOptions(); refreshItems();
+  enhanceSelectWithSearch('tItem', 'Search by shape, size, grade or make…');
+  fromSel.addEventListener('change', ()=>{ setLastUnit('transfer_from', fromSel.value); refreshToOptions(); refreshItems(); });
+  itemSel.addEventListener('change', refreshQtyFields);
+
+  document.getElementById('tSubmit').addEventListener('click', async ()=>{
+    const key = itemSel.value;
+    if(!key) return showToast('Choose an item first', 'red');
+    const pieces = Number(document.getElementById('tPieces')?.value)||0;
+    const weight = Number(document.getElementById('tWeight')?.value)||0;
+    if(pieces<=0 && weight<=0) return showToast('Enter pieces or weight', 'red');
+    const note = document.getElementById('tNote').value.trim();
+    const from = fromSel.value, to = toSel.value;
+    if(!isAdmin() && from !== STATE.user.unitId) return showToast('You can only transfer out of your own unit', 'red');
+    if(from === to) return showToast('Choose two different units', 'red');
+    const cur = stockOf(from, key);
+    if(pieces > cur.pieces + 1e-6 || weight > cur.weight + 0.005) return showToast('Not enough stock in the source unit', 'red');
+    const item = STATE.items[key];
+
+    optimisticStockDelta(from, key, -pieces, -weight);
+    optimisticStockDelta(to, key, pieces, weight);
+    optimisticTxn({type:'transfer', itemKey:key, item, fromUnit:from, toUnit:to, pieces, weight, note, user: STATE.user.email});
+    renderTab();
+    afterCommit(commitTxn({type:'transfer', itemId:key, item, fromUnit:from, toUnit:to, pieces, weight, note}), 'Stock transferred');
+  });
+}
+
+function wireEntry(){
+  document.getElementById('modeReceive').addEventListener('click', ()=>{ ENTRY_MODE='receive'; document.getElementById('tabContent').innerHTML = viewEntry(); wireEntry(); });
+  document.getElementById('modeIssue').addEventListener('click', ()=>{ ENTRY_MODE='issue'; document.getElementById('tabContent').innerHTML = viewEntry(); wireEntry(); });
+  const formEl = document.getElementById('entryForm');
+  if(ENTRY_MODE==='receive'){
+    formEl.innerHTML = receiveFormHtml();
+    let shape = SHAPES[0];
+    let wMode = 'manual';
+
+    function sizeLabel(){
+      if(shape==='Round') return 'Diameter (mm)';
+      if(shape==='Square') return 'Side (mm)';
+      if(shape==='Hex') return 'Size across flats (mm)';
+      return 'Size (mm)';
+    }
+    function renderSizeFields(){
+      const twoDim = shape==='Flat' || shape==='Rectangle';
+      document.getElementById('rSizeFields').innerHTML = twoDim
+        ? `<div class="row"><div class="field"><span class="field-label">Width (mm)</span><input id="rSizeA" type="number"/></div><div class="field"><span class="field-label">Thickness (mm)</span><input id="rSizeB" type="number"/></div></div>`
+        : `<div class="field"><span class="field-label">${sizeLabel()}</span><input id="rSizeA" type="number" placeholder="e.g. 25"/></div>`;
+      document.getElementById('rSizeA').addEventListener('input', recalcAuto);
+      document.getElementById('rSizeB')?.addEventListener('input', recalcAuto);
+    }
+
+    function recalcAuto(){
+      if(wMode!=='auto') return;
+      const a = document.getElementById('rSizeA')?.value;
+      const b = document.getElementById('rSizeB')?.value;
+      const length = document.getElementById('rLength')?.value;
+      const pieces = document.getElementById('rPieces')?.value;
+      const w = calcWeightKg(shape, a, b, length, pieces);
+      const wEl = document.getElementById('rWeight');
+      if(wEl) wEl.value = w || '';
+      const hint = document.getElementById('rWeightHint');
+      if(hint) hint.textContent = 'Based on ' + kgPerMeter(shape, a, b) + ' kg/m for this size — adjust if needed.';
+    }
+
+    function renderWeightBlock(){
+      document.getElementById('rWeightBlock').innerHTML = wMode==='manual'
+        ? `<div class="field"><span class="field-label">Weight (kg)</span><input id="rWeight" type="number" min="0" step="0.1" placeholder="0.0"/></div>`
+        : `<div class="row">
+             <div class="field"><span class="field-label">Length per piece (m)</span><input id="rLength" type="number" min="0" step="0.01" placeholder="e.g. 6"/></div>
+             <div class="field"><span class="field-label">Weight (kg) — editable</span><input id="rWeight" type="number" min="0" step="0.1" placeholder="0.0"/></div>
+           </div>
+           <div class="field-hint" id="rWeightHint" style="margin:-8px 0 14px;">Enter length and pieces above to calculate.</div>`;
+      if(wMode==='auto'){
+        document.getElementById('rLength').addEventListener('input', recalcAuto);
+        recalcAuto();
+      }
+    }
+    renderWeightBlock();
+    document.getElementById('rPieces').addEventListener('input', recalcAuto);
+    document.querySelectorAll('#rWModeChips .chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        wMode = chip.dataset.wmode;
+        document.querySelectorAll('#rWModeChips .chip').forEach(c=>c.classList.toggle('active', c===chip));
+        renderWeightBlock();
+      });
+    });
+
+    renderSizeFields();
+    document.getElementById('rUnit').addEventListener('change', e=>{ setLastUnit('receive', e.target.value); });
+    document.querySelectorAll('#rShapeChips .chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        shape = chip.dataset.shape;
+        document.querySelectorAll('#rShapeChips .chip').forEach(c=>c.classList.toggle('active', c===chip));
+        renderSizeFields();
+        recalcAuto();
+      });
+    });
+    document.getElementById('rSubmit').addEventListener('click', async ()=>{
+      const unitId = document.getElementById('rUnit').value;
+      const sizeA = document.getElementById('rSizeA').value;
+      const sizeB = document.getElementById('rSizeB')?.value;
+      const grade = document.getElementById('rGrade').value.trim();
+      const make = document.getElementById('rMake').value.trim();
+      const pieces = Number(document.getElementById('rPieces').value)||0;
+      const weight = Number(document.getElementById('rWeight').value)||0;
+      const note = document.getElementById('rNote').value.trim();
+      const twoDim = shape==='Flat' || shape==='Rectangle';
+      const size = twoDim ? (sizeA && sizeB ? sizeA+' x '+sizeB+' mm' : '') : (sizeA ? sizeA+' mm' : '');
+      if(!size) return showToast('Enter the size', 'red');
+      if(!grade) return showToast('Enter a grade', 'red');
+      if(pieces<=0 && weight<=0) return showToast('Enter pieces or weight', 'red');
+
+      if(!isAdmin() && unitId !== STATE.user.unitId) return showToast('You can only receive into your own unit', 'red');
+      const key = ensureLocalItem(shape, size, grade, make);
+      const item = STATE.items[key];
+      optimisticStockDelta(unitId, key, pieces, weight);
+      optimisticTxn({type:'receive', itemKey:key, item, toUnit:unitId, pieces, weight, note, user: STATE.user.email});
+      renderTab();
+      afterCommit(commitTxn({type:'receive', itemId:key, item, toUnit:unitId, pieces, weight, note}), 'Stock received');
+    });
+  } else {
+    formEl.innerHTML = issueFormHtml();
+    const unitSel = document.getElementById('iUnit');
+    const itemSel = document.getElementById('iItem');
+    const qtyWrap = document.getElementById('iQtyWrap');
+    const weightBlockEl = document.getElementById('iWeightBlock');
+    const submitBtn = document.getElementById('iSubmit');
+    let iWMode = 'manual';
+
+    function refreshItems(){
+      const avail = availableItems(unitSel.value);
+      itemSel.innerHTML = '<option value="">Select item…</option>' +
+        avail.map(a=>`<option value="${a.key}">${esc(itemLabel(a.it))} — ${fmt(a.s.weight,1)} kg / ${fmt(a.s.pieces)} pc avail.</option>`).join('');
+      qtyWrap.innerHTML=''; weightBlockEl.innerHTML=''; submitBtn.disabled = true;
+      itemSel._syncSearchLabel && itemSel._syncSearchLabel();
+    }
+
+    function iRecalcAuto(sel){
+      if(iWMode!=='auto') return;
+      const length = document.getElementById('iLength')?.value;
+      const cutCount = document.getElementById('iCutCount')?.value || 1;
+      const nums = parseSizeNums(sel.it.size);
+      const w = calcWeightKg(sel.it.shape, nums[0], nums[1], length, cutCount);
+      const wEl = document.getElementById('iWeight');
+      if(wEl) wEl.value = w || '';
+      const hint = document.getElementById('iWeightHint');
+      if(hint) hint.textContent = 'Based on ' + kgPerMeter(sel.it.shape, nums[0], nums[1]) + ' kg/m for this size. This only sets the weight — it does not touch the Pieces field above.';
+    }
+
+    function renderIWeightBlock(sel){
+      weightBlockEl.innerHTML = `
+        <div class="field"><span class="field-label">Weight entry</span>
+          <div class="chiprow" id="iWModeChips">
+            <button type="button" class="chip ${iWMode==='manual'?'active':''}" data-wmode="manual">Manual weight</button>
+            <button type="button" class="chip ${iWMode==='auto'?'active':''}" data-wmode="auto">Auto (by length)</button>
+          </div>
+        </div>
+        ${iWMode==='manual'
+          ? `<div class="field"><span class="field-label">Weight kg (max ${fmt(sel.s.weight,1)})</span><input id="iWeight" type="number" min="0" step="0.1" max="${sel.s.weight}" placeholder="0.0"/></div>`
+          : `<div class="row">
+               <div class="field"><span class="field-label">Length cut (m)</span><input id="iLength" type="number" min="0" step="0.01" placeholder="e.g. 2"/></div>
+               <div class="field"><span class="field-label">Number of such cuts</span><input id="iCutCount" type="number" min="1" step="1" value="1"/></div>
+             </div>
+             <div class="field"><span class="field-label">Weight kg (max ${fmt(sel.s.weight,1)}) — editable</span><input id="iWeight" type="number" min="0" step="0.1" max="${sel.s.weight}" placeholder="0.0"/></div>
+             <div class="field-hint" id="iWeightHint" style="margin:-8px 0 14px;">Cutting a length off a longer bar? Leave Pieces at 0 — only the weight reduces.</div>`
+        }`;
+      document.querySelectorAll('#iWModeChips .chip').forEach(chip=>{
+        chip.addEventListener('click', ()=>{ iWMode = chip.dataset.wmode; renderIWeightBlock(sel); });
+      });
+      if(iWMode==='auto'){
+        document.getElementById('iLength').addEventListener('input', ()=>iRecalcAuto(sel));
+        document.getElementById('iCutCount').addEventListener('input', ()=>iRecalcAuto(sel));
+        iRecalcAuto(sel);
+      }
+    }
+
+    itemSel?.addEventListener('change', ()=>{
+      const key = itemSel.value;
+      submitBtn.disabled = !key;
+      if(!key){ qtyWrap.innerHTML=''; weightBlockEl.innerHTML=''; return; }
+      const sel = availableItems(unitSel.value).find(a=>a.key===key);
+      if(!sel) return;
+      iWMode = 'manual';
+      qtyWrap.innerHTML = `<div class="field"><span class="field-label">Pieces (max ${fmt(sel.s.pieces)})</span><input id="iPieces" type="number" min="0" max="${sel.s.pieces}" placeholder="0"/><span class="field-hint">Only enter this if you're removing a whole piece. Leave at 0 for a cut length off a longer bar.</span></div>`;
+      renderIWeightBlock(sel);
+    });
+    unitSel.addEventListener('change', ()=>{ setLastUnit('issue', unitSel.value); refreshItems(); });
+    refreshItems();
+    enhanceSelectWithSearch('iItem', 'Search by shape, size, grade or make…');
+    submitBtn.addEventListener('click', async ()=>{
+      const key = itemSel.value;
+      if(!key) return;
+      const pieces = Number(document.getElementById('iPieces')?.value)||0;
+      const weight = Number(document.getElementById('iWeight')?.value)||0;
+      if(pieces<=0 && weight<=0) return showToast('Enter pieces or weight', 'red');
+      const note = document.getElementById('iNote').value.trim();
+      const unitId = unitSel.value;
+      if(!isAdmin() && unitId !== STATE.user.unitId) return showToast('You can only issue from your own unit', 'red');
+      const cur = stockOf(unitId, key);
+      if(pieces > cur.pieces + 1e-6 || weight > cur.weight + 0.005) return showToast('Not enough stock to issue that much', 'red');
+      const item = STATE.items[key];
+
+      optimisticStockDelta(unitId, key, -pieces, -weight);
+      optimisticTxn({type:'issue', itemKey:key, item, fromUnit:unitId, pieces, weight, note, user: STATE.user.email});
+      renderTab();
+      afterCommit(commitTxn({type:'issue', itemId:key, item, fromUnit:unitId, pieces, weight, note}), 'Stock issued');
+    });
+  }
+}
+
+function wireHistory(){
+  document.querySelectorAll('[data-hf]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ historyFilter = btn.dataset.hf; document.getElementById('tabContent').innerHTML = viewHistory(); wireHistory(); });
+  });
+  document.querySelectorAll('[data-edit-txn]').forEach(btn=>{
+    btn.addEventListener('click', ()=> openEditModal(btn.dataset.editTxn));
+  });
+  document.querySelectorAll('[data-del-txn]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const t = (STATE.recent||[]).find(x=>x.id===btn.dataset.delTxn);
+      if(!t) return showToast('That entry is no longer in the loaded log', 'red');
+      if(!confirm('Delete this entry? Its effect on stock will be reversed.')) return;
+      try{ await deleteTxn(t); showToast('Entry deleted'); }
+      catch(e){ showToast(friendlyErr(e), 'red'); }
+    });
+  });
+  document.getElementById('logMore')?.addEventListener('click', ()=>{
+    logLimit += 50; subscribeTxns(); showToast('Loading older entries…');
+  });
+}
+
+function labelForType(type){ return {receive:'Received', issue:'Issued', transfer:'Transferred'}[type] || type; }
+
+function closeModal(){ document.getElementById('modalRoot').innerHTML = ''; }
+
+function openEditModal(txnId){
+  const t = (STATE.recent||[]).find(x=>x.id===txnId);
+  if(!t){ showToast('That entry is no longer in the loaded log', 'red'); return; }
+  const it = t.item || STATE.items[t.itemKey];
+  const cleanNote = (t.note||'').replace(/\s*\[edited by [^\]]*\]\s*$/,'');
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-card">
+        <div class="modal-title">Edit entry</div>
+        <div class="modal-sub">${esc(itemLabel(it))} — ${esc(labelForType(t.type))}</div>
+        <div class="row">
+          <div class="field"><span class="field-label">Pieces</span><input id="mPieces" type="number" min="0" value="${t.pieces}"/></div>
+          <div class="field"><span class="field-label">Weight (kg)</span><input id="mWeight" type="number" min="0" step="0.1" value="${t.weight}"/></div>
+        </div>
+        <div class="field"><span class="field-label">Note</span><input id="mNote" value="${esc(cleanNote)}"/></div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" id="mCancel">Cancel</button>
+          <button class="btn btn-amber" id="mSave">Save correction</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('mCancel').addEventListener('click', closeModal);
+  document.getElementById('modalOverlay').addEventListener('click', e=>{ if(e.target.id==='modalOverlay') closeModal(); });
+  document.getElementById('mSave').addEventListener('click', async ()=>{
+    const pieces = Number(document.getElementById('mPieces').value)||0;
+    const weight = Number(document.getElementById('mWeight').value)||0;
+    const note = document.getElementById('mNote').value.trim();
+    if(pieces<=0 && weight<=0) return showToast('Enter pieces or weight', 'red');
+    try{
+      await editTxn(t, pieces, weight, note);
+      showToast('Entry corrected');
+      closeModal();
+    }catch(e){ showToast(friendlyErr(e), 'red'); }
+  });
+}
+
+function wireAdmin(){
+  document.querySelectorAll('[data-unit-rename]').forEach(inp=>{
+    inp.addEventListener('blur', async ()=>{
+      const id = inp.dataset.unitRename;
+      const cur = (STATE.units||[]).find(u=>u.id===id);
+      if(cur && inp.value.trim() && inp.value.trim()!==cur.name){
+        try{ await renameUnitFb(id, inp.value.trim()); showToast('Unit renamed'); }
+        catch(e){ showToast(friendlyErr(e),'red'); }
+      }
+    });
+  });
+  const roleSel = document.getElementById('uRole');
+  const unitWrap = document.getElementById('uUnitWrap');
+  function syncUnitVisibility(){ unitWrap.style.display = roleSel.value==='admin' ? 'none' : 'block'; }
+  roleSel.addEventListener('change', syncUnitVisibility);
+  syncUnitVisibility();
+
+  document.getElementById('uSubmit').addEventListener('click', async ()=>{
+    const email = document.getElementById('uEmail').value.trim();
+    const name = document.getElementById('uName').value.trim();
+    const role = roleSel.value;
+    const unitId = document.getElementById('uUnit').value;
+    if(!email) return showToast('Enter an email', 'red');
+    try{
+      await saveUserFb(email, name, role, unitId);
+      showToast('User saved');
+      document.getElementById('uEmail').value=''; document.getElementById('uName').value='';
+      loadUserList();
+    }catch(e){ showToast(friendlyErr(e),'red'); }
+  });
+
+  loadUserList();
+}
+
+async function loadUserList(){
+  const card = document.getElementById('userListCard');
+  try{
+    const users = await listUsersFb();
+    card.innerHTML = `<div style="font-size:12px;color:var(--textDim);font-weight:600;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">Staff with access</div>` +
+      (users.length ? users.map(u=>`
+        <div class="userlist-row">
+          <div>
+            <div class="userlist-name">${esc(u.name||'(no name)')} <span class="pill pill-${u.role==='admin'?'steel':'amber'}" style="margin-left:6px;">${esc(u.role)}</span></div>
+            <div class="userlist-email">${esc(u.email)}${u.role==='staff' ? ' · '+esc(unitName(u.unitId)) : ''}</div>
+          </div>
+          <button class="iconbtn" data-remove="${esc(u.email)}">${ICONS.trash}</button>
+        </div>
+      `).join('') : '<div class="empty">No staff added yet.</div>');
+    card.querySelectorAll('[data-remove]').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        try{ await removeUserFb(btn.dataset.remove); showToast('User removed'); loadUserList(); }
+        catch(e){ showToast(friendlyErr(e),'red'); }
+      });
+    });
+  }catch(e){ card.innerHTML = '<div class="empty">'+esc(friendlyErr(e))+'</div>'; }
+}
+
+startApp();
+</script>
+</body>
+</html>
