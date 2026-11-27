@@ -116,6 +116,10 @@ input:focus,select:focus{border-color:var(--steel);}
 .sync.ok{color:var(--green);} .sync.pending{color:var(--amber);} .sync.off{color:var(--textFaint);}
 .linkbtn{background:none;border:none;color:var(--steel);font-size:11.5px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline;}
 .loadmore{margin-top:2px;}
+textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:12px;font-family:'IBM Plex Mono',monospace;outline:none;box-sizing:border-box;resize:vertical;}
+textarea:focus{border-color:var(--steel);}
+.imp-help{font-size:12.5px;color:var(--textDim);line-height:1.6;margin:0 0 14px;}
+.imp-warn{background:var(--amberDim);color:var(--amber);border-radius:8px;padding:9px 11px;font-size:12.5px;margin:10px 0;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -128,7 +132,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signO
   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager,
   doc, collection, query, orderBy, limit, onSnapshot, getDocs, setDoc, deleteDoc,
-  writeBatch, increment, serverTimestamp }
+  writeBatch, increment, serverTimestamp, Timestamp }
   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -379,7 +383,7 @@ function parseTxn(d){
     type: x.type, itemKey: x.itemId, item: x.item || null,
     fromUnit: x.fromUnit || '', toUnit: x.toUnit || '',
     pieces: Number(x.pieces)||0, weight: Number(x.weight)||0,
-    note: x.note || '', user: x.user || ''
+    note: x.note || '', user: x.origUser || x.user || ''
   };
 }
 
@@ -510,6 +514,170 @@ async function removeUserFb(email){
 async function listUsersFb(){
   const snap = await getDocs(collection(db, 'users'));
   return snap.docs.map(d => Object.assign({email: d.id}, d.data()));
+}
+
+/* ---------- one-time import from the old Google Sheet ---------- */
+let IMPORT_PLAN = null;
+
+function parseTSV(text){
+  const rows = []; let row = [], cell = '', inQ = false;
+  text = String(text || '').replace(/\r/g, '');
+  for(let i = 0; i < text.length; i++){
+    const c = text[i];
+    if(inQ){
+      if(c === '"'){ if(text[i+1] === '"'){ cell += '"'; i++; } else inQ = false; }
+      else cell += c;
+    }
+    else if(c === '"' && cell === ''){ inQ = true; }
+    else if(c === '\t'){ row.push(cell); cell = ''; }
+    else if(c === '\n'){ row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += c;
+  }
+  if(cell !== '' || row.length){ row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(x => String(x).trim() !== ''));
+}
+const numOf = v => { const n = parseFloat(String(v == null ? '' : v).replace(/,/g, '').trim()); return isNaN(n) ? 0 : n; };
+
+function parseSheetDate(s, dateFmt){
+  s = String(s || '').trim(); if(!s) return null;
+  let y, mo, d, hh = 0, mi = 0, ss = 0;
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(m){ y = +m[1]; mo = +m[2]; d = +m[3]; hh = +(m[4]||0); mi = +(m[5]||0); ss = +(m[6]||0); }
+  else {
+    m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})(?:[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?/i);
+    if(!m) return null;
+    const a = +m[1], b = +m[2]; y = +m[3]; if(y < 100) y += 2000;
+    if(dateFmt === 'mdy'){ mo = a; d = b; } else { d = a; mo = b; }
+    hh = +(m[4]||0); mi = +(m[5]||0); ss = +(m[6]||0);
+    const ap = (m[7] || '').toUpperCase();
+    if(ap === 'PM' && hh < 12) hh += 12;
+    if(ap === 'AM' && hh === 12) hh = 0;
+  }
+  if(mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const dt = new Date(y, mo - 1, d, hh, mi, ss);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+function buildImportPlan(){
+  const warn = new Set();
+  const itemsRows = parseTSV(document.getElementById('impItems').value);
+  const stockRows = parseTSV(document.getElementById('impStock').value);
+  const txnRows = parseTSV(document.getElementById('impTxns').value);
+  const dateFmt = document.getElementById('impDate').value;
+  const unitIds = (STATE.units || []).map(u => u.id);
+
+  const oldItems = {};
+  itemsRows.forEach((r, i) => {
+    if(i === 0 && String(r[0]).trim().toLowerCase() === 'key') return;
+    const key = String(r[0] || '').trim(); if(!key) return;
+    const shapeRaw = String(r[1] || '').trim();
+    const shape = SHAPES.find(s => s.toLowerCase() === shapeRaw.toLowerCase()) || shapeRaw;
+    oldItems[key] = {shape, size: String(r[2] || '').trim(), grade: String(r[3] || '').trim(), make: String(r[5] || '').trim()};
+  });
+  if(!Object.keys(oldItems).length) warn.add('No items were found in box 1 (the Items tab). Nothing can be imported without it.');
+
+  const units = {};
+  let skipped = 0;
+  stockRows.forEach((r, i) => {
+    if(i === 0 && String(r[0]).trim().toLowerCase() === 'unitid') return;
+    const unitId = String(r[0] || '').trim(), key = String(r[1] || '').trim();
+    if(!unitId && !key) return;
+    const it = oldItems[key];
+    if(!it){ skipped++; return; }
+    if(!unitIds.includes(unitId)){ warn.add('Stock rows for unit "' + unitId + '" were skipped because that unit does not exist in the app.'); return; }
+    const p = numOf(r[2]), w = round2(numOf(r[3]));
+    if(p <= 0 && w <= 0) return;
+    const id = itemIdOf(it.shape, it.size, it.grade, it.make);
+    const u = units[unitId] || (units[unitId] = {fields: {}, items: 0, pieces: 0, weight: 0});
+    if(!u.fields[id]){ u.fields[id] = {shape: it.shape, size: it.size, grade: it.grade, make: it.make, p: 0, w: 0}; u.items++; }
+    u.fields[id].p += p; u.fields[id].w = round2(u.fields[id].w + w);
+    u.pieces += p; u.weight = round2(u.weight + w);
+  });
+  if(skipped) warn.add(skipped + ' stock row(s) were skipped because their item is not in the Items tab (make sure box 1 holds the whole Items tab).');
+
+  const txns = [];
+  let badDate = 0, badItem = 0, badType = 0;
+  txnRows.forEach((r, i) => {
+    if(i === 0 && String(r[0]).trim().toLowerCase() === 'id') return;
+    const oldId = String(r[0] || '').trim(); if(!oldId) return;
+    const type = String(r[2] || '').trim().toLowerCase();
+    if(!['receive', 'issue', 'transfer'].includes(type)){ badType++; return; }
+    const it = oldItems[String(r[3] || '').trim()];
+    if(!it){ badItem++; return; }
+    const dt = parseSheetDate(r[1], dateFmt);
+    if(!dt){ badDate++; return; }
+    txns.push({
+      docId: 'imp_' + oldId.replace(/[^A-Za-z0-9_-]/g, '_'), date: dt, type, item: it,
+      itemId: itemIdOf(it.shape, it.size, it.grade, it.make),
+      fromUnit: String(r[4] || '').trim(), toUnit: String(r[5] || '').trim(),
+      pieces: numOf(r[6]), weight: round2(numOf(r[7])), note: String(r[8] || '').trim(),
+      origUser: String(r[9] || '').trim().toLowerCase()
+    });
+  });
+  if(badDate) warn.add(badDate + ' log row(s) were skipped because their date could not be read. Check the date format setting.');
+  if(badItem) warn.add(badItem + ' log row(s) were skipped because their item is not in the Items tab.');
+  if(badType) warn.add(badType + ' log row(s) were skipped because their type was not receive / issue / transfer.');
+  return {units, txns, warnings: Array.from(warn)};
+}
+
+function renderImportPreview(plan){
+  const el = document.getElementById('impResult');
+  const lines = (STATE.units || []).map(u => {
+    const d = plan.units[u.id] || {items: 0, pieces: 0, weight: 0};
+    return '<div class="stat-row"><span>' + esc(u.name) + '</span><span class="mono"><b>' + fmt(d.weight, 1) + ' kg</b> · ' + fmt(d.pieces) + ' pcs · ' + d.items + ' items</span></div>';
+  }).join('');
+  const any = Object.keys(plan.units).length > 0 || plan.txns.length > 0;
+  el.innerHTML =
+    '<div style="margin-top:14px;font-size:12px;color:var(--textDim);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">Preview</div>' + lines +
+    '<div class="stat-row" style="margin-top:6px;"><span>Old log entries</span><span class="mono"><b>' + plan.txns.length + '</b></span></div>' +
+    plan.warnings.map(w => '<div class="imp-warn">' + esc(w) + '</div>').join('') +
+    (any
+      ? '<div class="imp-warn">Compare these totals with your old app\'s Dashboard. Importing <b>replaces</b> all stock currently in this app with these numbers, so do it before staff start entering real data.</div><button class="btn btn-amber" id="impGo">Import now</button>'
+      : '<div class="imp-warn">Nothing to import yet. Paste the Items and Stock tabs above, then tap Preview again.</div>');
+  const go = document.getElementById('impGo');
+  if(go) go.addEventListener('click', () => {
+    if(!confirm('Replace ALL stock in the app with the numbers from your sheet' + (plan.txns.length ? ' and add ' + plan.txns.length + ' old log entries' : '') + '?')) return;
+    runImport(plan);
+  });
+}
+
+async function runImport(plan){
+  const btn = document.getElementById('impGo');
+  btn.disabled = true; btn.textContent = 'Importing…';
+  try{
+    for(const u of (STATE.units || [])){
+      const d = plan.units[u.id];
+      const obj = {lastTxn: 'import'};
+      if(d) Object.keys(d.fields).forEach(id => {
+        const f = d.fields[id];
+        obj[id] = {shape: f.shape, size: f.size, grade: f.grade, make: f.make, p: f.p, w: f.w};
+      });
+      await setDoc(doc(db, 'stock', u.id), obj);        // replaces this unit's stock
+    }
+    for(let i = 0; i < plan.txns.length; i += 400){
+      const batch = writeBatch(db);
+      plan.txns.slice(i, i + 400).forEach(t => batch.set(doc(db, 'txns', t.docId), {
+        ts: Timestamp.fromDate(t.date), type: t.type, itemId: t.itemId,
+        item: {shape: t.item.shape, size: t.item.size, grade: t.item.grade, make: t.item.make || ''},
+        fromUnit: t.fromUnit, toUnit: t.toUnit, pieces: t.pieces, weight: t.weight, note: t.note,
+        user: STATE.user.email, origUser: t.origUser, userName: (t.origUser || '').split('@')[0]
+      }));
+      await batch.commit();
+    }
+    IMPORT_PLAN = null;
+    document.getElementById('impResult').innerHTML = '<div class="imp-warn" style="background:var(--greenDim);color:var(--green);">Import finished. Open the Dashboard and Stock tabs to check your numbers.</div>';
+    showToast('Import finished');
+  }catch(e){
+    showToast(friendlyErr(e), 'red');
+    btn.disabled = false; btn.textContent = 'Import now';
+  }
+}
+
+function wireImport(){
+  document.getElementById('impPreview').addEventListener('click', () => {
+    IMPORT_PLAN = buildImportPlan();
+    renderImportPreview(IMPORT_PLAN);
+  });
 }
 
 /* ---------- render root ---------- */
@@ -960,6 +1128,19 @@ function viewAdmin(){
     </div>
 
     <div class="card" id="userListCard"><div class="empty">Loading users…</div></div>
+
+    <div class="card">
+      <div style="font-size:12px;color:var(--textDim);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px;">Import from old Google Sheet (one time)</div>
+      <p class="imp-help">In your old Stockyard Google Sheet, open a tab, click any cell, press <b>Ctrl+A</b> then <b>Ctrl+C</b>, and paste it into the matching box below. Tap <b>Preview</b> to check the totals before anything is saved.</p>
+      <div class="field"><span class="field-label">1. Items tab</span><textarea id="impItems" rows="4" placeholder="Paste the Items tab here"></textarea></div>
+      <div class="field"><span class="field-label">2. Stock tab</span><textarea id="impStock" rows="4" placeholder="Paste the Stock tab here"></textarea></div>
+      <div class="field"><span class="field-label">3. Transactions tab (optional, brings the old log across)</span><textarea id="impTxns" rows="4" placeholder="Paste the Transactions tab here"></textarea></div>
+      <div class="field"><span class="field-label">Date format used in your Sheet</span>
+        <select id="impDate"><option value="dmy">Day / Month / Year (e.g. 26/11/2026)</option><option value="mdy">Month / Day / Year (e.g. 11/26/2026)</option></select>
+      </div>
+      <button class="btn btn-ghost" id="impPreview">Preview</button>
+      <div id="impResult"></div>
+    </div>
   `;
 }
 
@@ -1310,6 +1491,7 @@ function wireAdmin(){
     }catch(e){ showToast(friendlyErr(e),'red'); }
   });
 
+  wireImport();
   loadUserList();
 }
 
